@@ -15,6 +15,7 @@
 \usepackage{cancel}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{wrapfig}
 
 % mathcal
 \newcommand{\Ac}{\mathcal{A}}
@@ -250,17 +251,16 @@
 \label{sec:Task, Dataset and Metrics}
 \textbf{Task:} For this project, we aim to cast the familiar robotics problem of Simultaneous Localization and Mapping (SLAM) as a dual optimization between the weights of a Multi-Layer Perceptron (MLP) that defines the \emph{map} and a sequence of 3D poses $T \in SE(3)$ that defines the camera \emph{trajectory} for a given scene. Our hope is to show that an implicit function representation of a scene via neural networks allows for scene completion that was not possible previously through geometric representations, and show that simultaneous optimization of the camera trajectory is feasible.
 
-\todo{Rewrite this}
 Consider a stream of incoming RGB frames (see Figure~\ref{fig:structured-prediction}). Each incoming frame associated with the 3D implicit function model via an unary consistency factor that can be defined through a rendering loss, and similarly between pairs of images, we define a new pairwise consistency factor, that enables us to formulate the problem as a structured prediction task of \emph{maximum a posteriori} estimation of the camera poses, while optimizing the scene.
-\begin{figure}[htpb]
+
+\begin{wrapfigure}{l}{0.5\textwidth}
     \centering
-    \includegraphics[width=0.6\linewidth]{structured-prediction.jpeg}
+    \includegraphics[width=\linewidth]{structured-prediction}
     \caption{Illustration of the problem formulation}%
     \label{fig:structured-prediction}
-\end{figure}
+\end{wrapfigure}
 
-\textbf{Dataset:} We will use the Replica dataset \cite{replica19arxiv} from Facebook Research for our task. The dataset includes a set of reconstructed indoor scenes with dense geometry. We will likely use the ReplicaRenderer to render images of the indoor scenes with a planned camera trajectory and feed \emph{unposed} images to the algorithm. Our fallback options for datasets are the Blender image dataset which comes with NeRF \cite{nerf} or the TUM RGBD dataset \cite{sturmBenchmarkEvaluationRGBD2012}
-
+\textbf{Dataset:} We will use the Replica dataset \cite{replica19arxiv} from Facebook Research for our task. The dataset includes a set of reconstructed indoor scenes with dense geometry. We will likely use the ReplicaRenderer to render images of the indoor scenes with a planned camera trajectory and feed \emph{unposed} images to the algorithm. Our fallback options for datasets are the Blender image dataset which comes with NeRF \cite{nerf} or the TUM RGBD dataset \cite{sturmBenchmarkEvaluationRGBD2012}.
 {\bf Metrics:} We will measure the quality of novel view synthesis for the volumetric renderer via PSNR and SSIM. To quantitatively measure the accuracy of the 3D reconstruction we will measure the average distance of the points from the reconstructed scene and the ground truth. We will use standard Absolute trajectory error (ATE) metric, which measures the pose error for every camera pose in the trajectory against the ground truth. A more qualitative evaluation will be provided via visualization of the reconstructed scene and the optimized camera trajectory.
 
 \textbf{Fallback Plan:} We will assume a pre-trained implicit funtion model of the scene, and given a sequence of unposed images, optimize over the pose variables through the differentiable renderer to generate relative pose measurements between the images. On obtaining these relative pose measurements, we can formulate the pose optimization as gaussian belief propagation over the pose graph (factor graph) to obtain the optimized camera poses.
@@ -279,15 +279,15 @@ Specifically, in addition to the per pixel color loss used in NeRF (ref. Equatio
 \section{Related Work}%
 \label{sec:Related Work}
 {\bf SLAM:}
-Simultaneous localization and mapping is a well researched problem which involves generating a map of a novel environment while tracking the agent's location within that environment. The key difficulties of the problem come from real time operation as this limits the amount of computation time and potential optimization complexity. ORB-SLAM provided a solution that could not only operate in real time, but also maintain lifelong operation and deal with tracking failure \cite{orb_slam}. This sort of efficiency was achieved by using the same image matching ORB features (which can be derived extremely quickly) for both mapping/tracking and place recognition \cite{orb}. Another approach was to avoid image feature mapping entirely and directly generate a local map by optimizing photometric error over a window of recent frames of the camera \cite{direct_odometry}.
+Simultaneous localization and mapping is a well researched problem which involves generating a map of a novel environment while tracking the agent's location within that environment. The key difficulties of the problem come from real time operation as this limits the amount of computation time and potential optimization complexity. ORB-SLAM \cite{orb_slam} provides a solution that not only operates in real time, but also maintains lifelong operation and deals with tracking failure. This efficiency is achieved by using ORB features for image matching for both mapping/tracking and place recognition \cite{orb}. Other approaches like DSO \cite{direct_odometry} avoid image feature mapping entirely and directly generate a local map by optimizing photometric error over a window of recent frames of the camera.
 
 {\bf Graphical Models for SLAM:}
-A novel method for solving the SLAM problem for large-scale environments introduces a Bayes Net representation where the agent's pose and landmark positions are recorded at various timesteps \cite{isam2}. These poses and positions represent nodes in the graph, and individual nodes are connected by directed edges from one timestep to the next and from the agent's pose to the position of a landmark. This allows the problem to be reduced to a tree of connected cliques. In doing so, the SLAM problem can be reduced to a variable elimination problem, which works well given a small max clique size.
+A novel method for solving the SLAM problem for large-scale environments introduces a Bayes Net representation where the agent's pose and landmark positions are recorded at various timesteps \cite{isam2}. These poses and positions represent nodes in the graph, and individual nodes are connected by directed edges from one timestep to the next and from the agent's pose to the position of a landmark. This reduces the problem to variable elimination, which works well given a small max clique size.
 
 {\bf Implicit Scene Representation:}
-An offshoot of SLAM is the problem of synthesizing novel views of a complex scene. This is solved by reducing the problem to optimizing a neural radiance field representation for a complex scene \cite{nerf}. A neural radiance field representation models a 3 dimensional scene as a compilation of points sampled along camera rays from different poses. These are represented as 5D coordinates (location and viewing direction), which can then be collected and transformed using a neural network to estimate the color (i.e. shade, brightness, etc.) of parts of the scene from a different point of view.
+Tangential to SLAM is the problem of scene reconstruction. Recently, this has been done implicitly by optimizing a neural radiance field representation for a complex scene \cite{nerf}. A neural radiance field representation models a 3 dimensional scene as a compilation of points sampled along camera rays shot from pixel locations of an image at a novel pose. These samples are represented as 5D coordinates (location and viewing direction), and are transformed using a neural network to estimate the color (i.e. shade, brightness, etc.) at those pixels.
 
-Now, instead of considering these 5D coordinates as inputs, we can assume that a neural network is capable of self-generating this implicit representation. With this in mind, by correctly sampling the frames of a camera such that they span the scene, a neural network can self generate a solution to the SLAM problem with a high degree of accuracy \cite{imap}.
+This idea has been used recently for SLAM \cite{imap} where, given an RGB-D camera stream, a scene (including its unseen regions) can be mapped alongside predicting the camera trajectory from a small number of keypoint frames. In this work, we will attempt to do the same but without assuming access to depth sensors.
 
 \section{Expected Outcomes}%
 \label{sec:Expected Outcomes}
@@ -303,6 +303,8 @@ For these two end outcomes, we expect to tune the number of past RGB images requ
 We will first need to set up the open-source NeRF codebase available at \hyperlink{https://github.com/bmild/nerf}{https://github.com/bmild/nerf} to use the baseline MLP architecture and volumetric rendering utilities. We will build on this codebase to incorporate our pairwise consistency criteria and build a factor graph to alternate between its and the MLP's optimization. This will require us to use the lietorch codebase too. We will additionally be generating our image dataset using the Renderer from the Replica dataset available at \hyperlink{https://github.com/facebookresearch/Replica-Dataset}{https://github.com/facebookresearch/Replica-Dataset}.
 
 Eric will take on the task of curating the dataset which will be used by Tarasha to optimize the MLP weights and learn the poses. Akash will be responsible for the qualitative and quantitative evaluation.
+
+\footnotesize
 
 \bibliographystyle{abbrv}
 \bibliography{references, references_zotero}

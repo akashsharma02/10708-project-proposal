@@ -263,11 +263,11 @@ Please consider the content of this proposal to be an upper bound on the actual 
 
 We propose to solve the SLAM problem by building an implicit neural representation of a scene, encoded in the weights of an MLP, while also optimizing a sequence of camera poses for each incoming image in the RGB stream.
 
-Specifically, in addition to the co
+Specifically, in addition to the per pixel color loss used in NeRF (ref. Equation 1), we will impose per pixel color constraints between every pair of input images (ref. Equation 2). This is possible because every pair of images is associated with each other with a camera pose transformation which we want to optimize over.
 
-\begin{enumerate}
-    \item We can add pairwise consistency terms in the loss, and make this a  structured problem.
-\end{enumerate}
+\begin{align}
+    l(\thetav, \Db) = \sum_{i = 1}^{K} \sum_{m,n = 1}^{N} C(r_i(m, n)) - \hat{C}(r_i(m,n))
+\end{align}
 
 \section{Related Work}%
 \label{sec:Related Work}
@@ -295,7 +295,7 @@ For these two end outcomes, we expect to tune the number of past RGB images requ
 
 We will first need to set up the open-source NeRF codebase available at \hyperlink{https://github.com/bmild/nerf}{https://github.com/bmild/nerf} to use the baseline MLP architecture and volumetric rendering utilities. We will build on this codebase to incorporate our pairwise consistency criteria and build a factor graph to alternate between its and the MLP's optimization. This will require us to use the lietorch codebase too. We will additionally be generating our image dataset using the Renderer from the Replica dataset available at \hyperlink{https://github.com/facebookresearch/Replica-Dataset}{https://github.com/facebookresearch/Replica-Dataset}. 
 
-Eric Li will take on the task of curating the dataset which will be used by Tarasha to optimize the MLP weights and learn the poses. Akash will be responsible for the qualitative and quantitative evaluation.
+Eric will take on the task of curating the dataset which will be used by Tarasha to optimize the MLP weights and learn the poses. Akash will be responsible for the qualitative and quantitative evaluation.
 
 \bibliographystyle{abbrv}
 \bibliography{references}

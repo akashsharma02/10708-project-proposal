@@ -232,7 +232,7 @@
 % Edit these as appropriate
 \newcommand\course{10708}
 \newcommand\hwnumber{1}                  % <-- homework number
-\newcommand\NetIDa{tkhurana \\ akashsha \\ eli2}           % <-- NetID of person #1
+\newcommand\NetIDa{tkhurana \\ akashsha \\ eli1}           % <-- NetID of person #1
 
 \pagestyle{fancyplain}
 \headheight 35pt
@@ -245,26 +245,60 @@
 \headsep 1.5em
 
 \begin{document}
-\section{Overview}%
-\label{sec:Overview}
 
-\section{Dataset and Task}%
-\label{sec:Dataset and Task}
+\section{Task, Dataset and Metrics}%
+\label{sec:Task, Dataset and Metrics}
+{\bf Task:} For this project, we aim to cast the standard vision problem of Simultaneous Localization and Mapping as a dual optimization between the weights of a Multi-Layer Perceptron that {\em maps} a given scene and a set of poses characterized by a rotation and translation that {\em localizes} the camera. Our hope is to show that semantic/neural representation of a scene aids learning the camera poses of images in which this scene is represented, in a supervised manner.
+
+This task is a structured prediction problem because each incoming image in the RGB stream of the scene is associated with every other image of the scene by a camera pose transformation. We need to predict the camera poses for this sequence of images.
+
+{\bf Dataset:} We look forward to using the Replica dataset \cite{???} by Facebook Research for our task which comes with a set of reconstructed indoor scenes with dense geometry. We will likely use the ReplicaRenderer to render images of the indoor scenes with a planned camera trajectory. Our fallback options for the dataset are the Blender image dataset which comes with NeRF \cite{nerf} or the TUM RGBD dataset \cite{???}. 
+
+{\bf Metrics:} We will use the L1 norm between the color of the rendered image pixel from a new view and the true color of the corresponding pixel from the incoming image as an error metric to quantitatively evaluate our {\em mapping} performance. We will also use an L1 norm between the predicted camera pose and true camera pose to quantitatively evaluate our {\em localization} performance. A more qualitative evaluation will be via visualization of the reconstructed scene and the learnt camera trajectory.
+
+Please consider the content of this proposal to be an upper bound on the actual project we will submit towards the end of the semester. Our fallback plan is to implement a pose graph (or, factor graph) for the standard SLAM problem in C++ and show localization and 3D mapping of scene without using implicit neural representations. 
 
 \section{Approach}%
 \label{sec:Approach}
 
+We propose to solve the SLAM problem by building an implicit neural representation of a scene, encoded in the weights of an MLP, while also optimizing a sequence of camera poses for each incoming image in the RGB stream.
+
+Specifically, in addition to the co
+
+\begin{enumerate}
+    \item We can add pairwise consistency terms in the loss, and make this a  structured problem.
+\end{enumerate}
+
 \section{Related Work}%
 \label{sec:Related Work}
+{\bf SLAM:}
+Simultaneous localization and mapping is a well researched problem which involves generating a map of a novel environment while tracking the agent's location within that environment. The key difficulties of the problem come from real time operation as this limits the amount of computation time and potential optimization complexity. ORB-SLAM provided a solution that could not only operate in real time, but also maintain lifelong operation and deal with tracking failure \cite{orb_slam}. This sort of efficiency was achieved by using the same image matching ORB features (which can be derived extremely quickly) for both mapping/tracking and place recognition \cite{orb}. Another approach was to avoid image feature mapping entirely and directly generate a local map by optimizing photometric error over a window of recent frames of the camera \cite{direct_odometry}.
+
+{\bf Graphical Models for SLAM:}
+A novel method for solving the SLAM problem for large-scale environments introduces a Bayes Net representation where the agent's pose and landmark positions are recorded at various timesteps \cite{isam2}. These poses and positions represent nodes in the graph, and individual nodes are connected by directed edges from one timestep to the next and from the agent's pose to the position of a landmark. This allows the problem to be reduced to a tree of connected cliques. In doing so, the SLAM problem can be reduced to a variable elimination problem, which works well given a small max clique size.
+
+{\bf Implicit Scene Representation:}
+An offshoot of SLAM is the problem of synthesizing novel views of a complex scene. This is solved by reducing the problem to optimizing a neural radiance field representation for a complex scene \cite{nerf}. A neural radiance field representation models a 3 dimensional scene as a compilation of points sampled along camera rays from different poses. These are represented as 5D coordinates (location and viewing direction), which can then be collected and transformed using a neural network to estimate the color (i.e. shade, brightness, etc.) of parts of the scene from a different point of view.
+
+Now, instead of considering these 5D coordinates as inputs, we can assume that a neural network is capable of self-generating this implicit representation. With this in mind, by correctly sampling the frames of a camera such that they span the scene, a neural network can self generate a solution to the SLAM problem with a high degree of accuracy \cite{imap}.
 
 \section{Expected Outcomes}%
 \label{sec:Expected Outcomes}
+% \begin{enumerate}
+%     \item A method that can learn scene geometry encoded in the network weights, and also optimize the camera trajectory simultaneously, given only RGB image stream
+% \end{enumerate}
+We expect to recover camera poses for RGB images in the incoming unposed camera stream. We also expect to simultaneously represent the 3D scene in the RGB images as a set of weights of a Multi-Layer Perceptron.
 
+For these two end outcomes, we expect to tune the number of past RGB images required to compute the pairwise consistency loss terms. In addition to this, we will also hand-tune the number of pixels to render the scene representation at, per incoming image, so that we do not run out of compute. With the resources available to us, we hope to take a step towards solving this important and exciting task but do not commit to extraordinary results.
 \section{Plan}%
 \label{sec:Plan}
 
-\section{Pre-existing Work}%
-\label{sec:Pre-existing Work}
+We will first need to set up the open-source NeRF codebase available at \hyperlink{https://github.com/bmild/nerf}{https://github.com/bmild/nerf} to use the baseline MLP architecture and volumetric rendering utilities. We will build on this codebase to incorporate our pairwise consistency criteria and build a factor graph to alternate between its and the MLP's optimization. This will require us to use the lietorch codebase too. We will additionally be generating our image dataset using the Renderer from the Replica dataset available at \hyperlink{https://github.com/facebookresearch/Replica-Dataset}{https://github.com/facebookresearch/Replica-Dataset}. 
+
+Eric Li will take on the task of curating the dataset which will be used by Tarasha to optimize the MLP weights and learn the poses. Akash will be responsible for the qualitative and quantitative evaluation.
+
+\bibliographystyle{abbrv}
+\bibliography{references}
 
 \end{document}
 

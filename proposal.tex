@@ -267,14 +267,25 @@ Consider a stream of incoming RGB frames (see Figure~\ref{fig:structured-predict
 
 \section{Approach}%
 \label{sec:Approach}
+In robotics, Simultaneous Localization and Mapping (SLAM) is solved as a MAP estimation of robot poses $\Xc = \{\xv_k\}_{k=1}^{K}$, and the collection of landmarks $\Lc = \{\ell_n\}_{n=1}^{N}$, given a set of measurements $\Zc = \{\zv_m\}_{m=1}^{M}$ as
+\begin{align*}
+\hat{\Xc}, \hat{\Lc} = \argmin_{\Xc, \Lc} p(\Xc, \Lc | \Zc) \propto \argmin_{\Xc, \Lc} p(\Zc | \Xc, \Lc)
+\end{align*}
+which is decomposed according to the problem structure (defined through a factor graph) as measurements are typically local and solved via non-linear solvers.
 
-We propose to solve the SLAM problem by building an implicit neural representation of a scene, encoded in the weights of an MLP, while also optimizing a sequence of camera poses for each incoming image in the RGB stream.
+In this project, we propose to represent the map (collection of landmarks) through an implicit neural representation for the scene \cite{mildenhallNeRFRepresentingScenes2020} encoded in the weights of the MLP, while also optimizing a sequence of camera poses for each incoming image in the RGB stream.
 
-Specifically, in addition to the per pixel color loss used in NeRF (ref. Equation 1), we will impose per pixel color constraints between every pair of input images (ref. Equation 2). This is possible because every pair of images is associated with each other with a camera pose transformation which we want to optimize over.
+In particular, while previously the scene model has been optimized through the rendering loss (Equation \ref{eq:1}), we leverage structure in the problem to enforce pairwise consistency between nearby images in the dataset of images (Equation \ref{eq:2})
 
 \begin{align}
-    l(\thetav, \Db) = \sum_{i = 1}^{K} \sum_{m,n = 1}^{N} C(r_i(m, n)) - \hat{C}(r_i(m,n))
+    l(\thetav, \Dc) = \sum_{i = 1}^{K} \sum_{m,n = 1}^{M,N} C(r_i^{(m, n)}) - \hat{C}(r_i^{(m,n)}) \label{eq:1}
 \end{align}
+where $\thetav$ denoted the network weights $\Dc$ denotes the dataset of images $C(\cdot)$ denotes the differentiable volumetric rendering functionand $\hat{C}(\cdot)$ denotes the ground truth pixel color, $r_i^{(m, n)}$ denotes the camera ray corresponding to $(m, n)^{th}$ pixel in the $i^{th}$ camera.
+\begin{align}
+    l(\thetav, \Dc) = &\sum_{i = 1}^{K} \sum_{m,n = 1}^{M,N} C(r_i^{(m, n)}) - \hat{C}(r_i^{(m,n)}) + \nonumber\\
+    &\sum_{i,j \in E} \sum_{m,n = 1}^{M,N} C(e^{\xi t} r_i^{(m, n)}) - \hat{C}(r_j^{(m,n)}) + \C(e^{-\xi t} r_j^{(m, n)}) - \hat{C}(r_i^{(m,n)}) \label{eq:2}
+\end{align}
+Where $e^{\xi t}$ represents the relative pose between a pair of RGB frames. The hope is that during optimization, we are able to optimize for $\xi$.
 
 \section{Related Work}%
 \label{sec:Related Work}

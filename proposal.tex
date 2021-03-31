@@ -248,15 +248,22 @@
 
 \section{Task, Dataset and Metrics}%
 \label{sec:Task, Dataset and Metrics}
-{\bf Task:} For this project, we aim to cast the standard vision problem of Simultaneous Localization and Mapping as a dual optimization between the weights of a Multi-Layer Perceptron that {\em maps} a given scene and a set of poses characterized by a rotation and translation that {\em localizes} the camera. Our hope is to show that semantic/neural representation of a scene aids learning the camera poses of images in which this scene is represented, in a supervised manner.
+\textbf{Task:} For this project, we aim to cast the familiar robotics problem of Simultaneous Localization and Mapping (SLAM) as a dual optimization between the weights of a Multi-Layer Perceptron (MLP) that defines the \emph{map} and a sequence of 3D poses $T \in SE(3)$ that defines the camera \emph{trajectory} for a given scene. Our hope is to show that an implicit function representation of a scene via neural networks allows for scene completion that was not possible previously through geometric representations, and show that simultaneous optimization of the camera trajectory is feasible.
 
-This task is a structured prediction problem because each incoming image in the RGB stream of the scene is associated with every other image of the scene by a camera pose transformation. We need to predict the camera poses for this sequence of images.
+\todo{Rewrite this}
+Consider a stream of incoming RGB frames (see Figure~\ref{fig:structured-prediction}). Each incoming frame associated with the 3D implicit function model via an unary consistency factor that can be defined through a rendering loss, and similarly between pairs of images, we define a new pairwise consistency factor, that enables us to formulate the problem as a structured prediction task of \emph{maximum a posteriori} estimation of the camera poses, while optimizing the scene.
+\begin{figure}[htpb]
+    \centering
+    \includegraphics[width=0.6\linewidth]{structured-prediction.jpeg}
+    \caption{Illustration of the problem formulation}%
+    \label{fig:structured-prediction}
+\end{figure}
 
-{\bf Dataset:} We look forward to using the Replica dataset \cite{???} by Facebook Research for our task which comes with a set of reconstructed indoor scenes with dense geometry. We will likely use the ReplicaRenderer to render images of the indoor scenes with a planned camera trajectory. Our fallback options for the dataset are the Blender image dataset which comes with NeRF \cite{nerf} or the TUM RGBD dataset \cite{???}. 
+\textbf{Dataset:} We will use the Replica dataset \cite{replica19arxiv} from Facebook Research for our task. The dataset includes a set of reconstructed indoor scenes with dense geometry. We will likely use the ReplicaRenderer to render images of the indoor scenes with a planned camera trajectory and feed \emph{unposed} images to the algorithm. Our fallback options for datasets are the Blender image dataset which comes with NeRF \cite{nerf} or the TUM RGBD dataset \cite{sturmBenchmarkEvaluationRGBD2012}
 
-{\bf Metrics:} We will use the L1 norm between the color of the rendered image pixel from a new view and the true color of the corresponding pixel from the incoming image as an error metric to quantitatively evaluate our {\em mapping} performance. We will also use an L1 norm between the predicted camera pose and true camera pose to quantitatively evaluate our {\em localization} performance. A more qualitative evaluation will be via visualization of the reconstructed scene and the learnt camera trajectory.
+{\bf Metrics:} We will measure the quality of novel view synthesis for the volumetric renderer via PSNR and SSIM. To quantitatively measure the accuracy of the 3D reconstruction we will measure the average distance of the points from the reconstructed scene and the ground truth. We will use standard Absolute trajectory error (ATE) metric, which measures the pose error for every camera pose in the trajectory against the ground truth. A more qualitative evaluation will be provided via visualization of the reconstructed scene and the optimized camera trajectory.
 
-Please consider the content of this proposal to be an upper bound on the actual project we will submit towards the end of the semester. Our fallback plan is to implement a pose graph (or, factor graph) for the standard SLAM problem in C++ and show localization and 3D mapping of scene without using implicit neural representations. 
+\textbf{Fallback Plan:} We will assume a pre-trained implicit funtion model of the scene, and given a sequence of unposed images, optimize over the pose variables through the differentiable renderer to generate relative pose measurements between the images. On obtaining these relative pose measurements, we can formulate the pose optimization as gaussian belief propagation over the pose graph (factor graph) to obtain the optimized camera poses.
 
 \section{Approach}%
 \label{sec:Approach}
@@ -293,12 +300,12 @@ For these two end outcomes, we expect to tune the number of past RGB images requ
 \section{Plan}%
 \label{sec:Plan}
 
-We will first need to set up the open-source NeRF codebase available at \hyperlink{https://github.com/bmild/nerf}{https://github.com/bmild/nerf} to use the baseline MLP architecture and volumetric rendering utilities. We will build on this codebase to incorporate our pairwise consistency criteria and build a factor graph to alternate between its and the MLP's optimization. This will require us to use the lietorch codebase too. We will additionally be generating our image dataset using the Renderer from the Replica dataset available at \hyperlink{https://github.com/facebookresearch/Replica-Dataset}{https://github.com/facebookresearch/Replica-Dataset}. 
+We will first need to set up the open-source NeRF codebase available at \hyperlink{https://github.com/bmild/nerf}{https://github.com/bmild/nerf} to use the baseline MLP architecture and volumetric rendering utilities. We will build on this codebase to incorporate our pairwise consistency criteria and build a factor graph to alternate between its and the MLP's optimization. This will require us to use the lietorch codebase too. We will additionally be generating our image dataset using the Renderer from the Replica dataset available at \hyperlink{https://github.com/facebookresearch/Replica-Dataset}{https://github.com/facebookresearch/Replica-Dataset}.
 
 Eric will take on the task of curating the dataset which will be used by Tarasha to optimize the MLP weights and learn the poses. Akash will be responsible for the qualitative and quantitative evaluation.
 
 \bibliographystyle{abbrv}
-\bibliography{references}
+\bibliography{references, references_zotero}
 
 \end{document}
 
